@@ -1,17 +1,25 @@
 #!/bin/sh
 set -e
 
-# 127.0.0.1:5001
-registry serve /etc/docker/registry/config.yml &>/var/log/registry.log &
+if [ -z "${ECR_PUBLIC_AUTHORIZATION_TOKEN:-}" ]; then
+  reproxy \
+      -l 127.0.0.1:5000 \
+      --logger.stdout \
+      --static.enabled \
+      --static.rule='*,/v2/library/,https://public.ecr.aws/v2/docker/library' \
+      --static.rule='*,/v2/,https://public.ecr.aws/v2' \
+      &>/var/log/reproxy.log &
+else
+  reproxy \
+      -l 127.0.0.1:5000 \
+      --logger.stdout \
+      --static.enabled \
+      --static.rule='*,/v2/library/,https://public.ecr.aws/v2/docker/library' \
+      --static.rule='*,/v2/,https://public.ecr.aws/v2' \
+      --header="Authorization: Bearer ${ECR_PUBLIC_AUTHORIZATION_TOKEN}" \
+      &>/var/log/reproxy.log &
+fi
 
-# 127.0.0.1:5000
-reproxy \
-    -l 127.0.0.1:5000 \
-    --logger.stdout \
-    --static.enabled \
-    --static.rule='*,/v2/library/,http://127.0.0.1:5001/v2/docker/library' \
-    --static.rule='*,/v2/,http://127.0.0.1:5001/v2' \
-    &>/var/log/reproxy.log &
 
 /usr/local/bin/dockerd \
 	--registry-mirror http://127.0.0.1:5000 \

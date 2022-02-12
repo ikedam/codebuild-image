@@ -7,9 +7,24 @@ services:
         - http_proxy
         - https_proxy
     environment:
+      # To access from out of AWS, set `ECR_PUBLIC_AUTHORIZATION_TOKEN` to
+      # `aws ecr-public get-authorization-token --region us-east-1 --output=text --query 'authorizationData.authorizationToken'`
+      # See https://docs.aws.amazon.com/AmazonECR/latest/public/public-registries.html#public-registry-auth
+      # for more details.
+      - ECR_PUBLIC_AUTHORIZATION_TOKEN
+
       # Prevent connect to hosts except *.aws (especially registry-1.docker.io)
       # This is just for demonstrations.
       - http_proxy=http://127.0.0.1:8080
       - https_proxy=http://127.0.0.1:8080
-      - no_proxy=127.0.0.1,*.aws
+      - no_proxy=127.0.0.1,*.aws,*.cloudfront.net
     privileged: true
+  aws:
+    image: amazon/aws-cli:2.4.15
+    environment:
+      - http_proxy
+      - https_proxy
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_DEFAULT_REGION
+      - AWS_SESSION_TOKEN
