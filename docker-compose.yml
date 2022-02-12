@@ -1,0 +1,15 @@
+version: '3'
+services:
+  codebuild:
+    build:
+      context: .
+      args:
+        - http_proxy
+        - https_proxy
+    environment:
+      # Prevent connect to hosts except *.aws (especially registry-1.docker.io)
+      # This is just for demonstrations.
+      - http_proxy=http://127.0.0.1:8080
+      - https_proxy=http://127.0.0.1:8080
+      - no_proxy=127.0.0.1,*.aws
+    privileged: true
